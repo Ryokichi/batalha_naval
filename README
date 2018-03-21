@@ -2,3 +2,7 @@ Jogo desenvolvido para trabalho de curso tecnologia de redes
 
 Trata-se de um jogo multplayer para ser jogado através da rede
 por linha de comando.
+
+
+Optei por fazer com que o servidor faça praticamente todo o trabalho,
+informando para o cliente apenas o status do campo.
