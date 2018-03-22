@@ -7,7 +7,7 @@
 #include <sys/socket.h>
 //#include <ctype.h>
 
-#define SERVER_PORT 3132
+#define SERVER_PORT 3333
 #define B_LEN 4096
 
 struct sockaddr_in localAddr, remoteAddr;	
@@ -20,12 +20,12 @@ char coord[2];
 
 
 void printField(){
-	char cy[1];
+	char cy[1], c_aux = "~";
 	int i, j;
 	printf("  | 0|1|2|3|4|5|6|7|8|9 | ");
-	printf(  "|----- SEU CAMPO -----|\n");
+	printf("  |----- SEU CAMPO -----|\n");
 	printf("  |---------------------| ");
-	printf(  "|---------------------|\n");
+	printf("  |---------------------|\n");
 	for(i = 0; i < 10; i++){
 		memset(cy, 0x0,sizeof(char));
 		switch(i){
@@ -43,26 +43,23 @@ void printField(){
 		printf("%s | ", cy);
 
 		///Seu campo
-		for(j = 10; j < 20; j++){
-			printf("%c ", battleField[i][j]);
+		for(j = 0; j < 10; j++){
+			c_aux = battleField[i][j];
+			if (c_aux == 'W') c_aux = '~';
+			printf("%c ", c_aux);			
 		}
 		///Campo adversário
-		printf("| | ");
-		for (j = 0; j < 10; j++){
-			printf("%c ", battleField[i][j]);
+		printf("| %s | ", cy);
+		for (j = 10; j < 20; j++){
+			c_aux = battleField[i][j];			
+			printf("%c ", c_aux);
 		}
 		printf("|\n");
 	}	
 	printf("  |---------------------| ");
-	printf(  "|---------------------|\n");
+	printf("  |---------------------|\n");
 	printf("  | 0|1|2|3|4|5|6|7|8|9 | ");
-	printf(  "|----- SEU CAMPO -----|\n\n");
-}
-
-void applyCoord(){
-	printf("Informe suas coodenadas: ");
-	scanf("%c", coord);
-	validateCoord();	
+	printf("  |----- SEU CAMPO -----|\n\n");
 }
 
 void validateCoord(){
@@ -77,7 +74,14 @@ void validateCoord(){
 	}
 }
 
-int main(){	
+void applyCoord(){
+	printf("Informe suas coodenadas: ");
+	scanf("%c", coord);
+	validateCoord();	
+}
+
+int main(){
+	system("clear");
 	
 	local_sckt = socket(AF_INET, SOCK_STREAM, 0);
 	if (local_sckt < 0)
@@ -102,8 +106,8 @@ int main(){
 
         recv(local_sckt, battleField, sizeof(battleField),0);
 		recv(local_sckt, buffer, sizeof(buffer), 0);
-		play_first = buffer;
-		printf("Valor sorteado = %s\n", play_first);
+		play_first = atoi(buffer);
+		printf("Valor sorteado = %d\n", play_first);
 
 		if (play_first == 0)        	
             printf("Voce sera o segundo a jogar\n");
