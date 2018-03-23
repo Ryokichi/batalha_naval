@@ -7,7 +7,7 @@
 #include <sys/socket.h>
 //#include <ctype.h>
 
-#define SERVER_PORT 3333
+#define SERVER_PORT 4242
 #define B_LEN 4096
 
 struct sockaddr_in localAddr, remoteAddr;	
@@ -20,64 +20,81 @@ char coord[2];
 
 
 void printField(){
-	char cy[1], c_aux = "~";
-	int i, j;
-	printf("  | 0|1|2|3|4|5|6|7|8|9 | ");
-	printf("  |----- SEU CAMPO -----|\n");
-	printf("  |---------------------| ");
-	printf("  |---------------------|\n");
-	for(i = 0; i < 10; i++){
-		memset(cy, 0x0,sizeof(char));
-		switch(i){
-			case 0: strcpy(cy,"A"); break;
-			case 1: strcpy(cy,"B"); break;
-			case 2: strcpy(cy,"C"); break;
-			case 3: strcpy(cy,"D"); break;
-			case 4: strcpy(cy,"E"); break;
-			case 5: strcpy(cy,"F"); break;
-			case 6: strcpy(cy,"G"); break;
-			case 7: strcpy(cy,"H"); break;
-			case 8: strcpy(cy,"I"); break;
-			case 9: strcpy(cy,"J"); break;
-		}		
-		printf("%s | ", cy);
+    char cy[2], c_aux;
+    int i, j;
+    printf("  | A|B|C|D|E|F|G|H|I|J | ");
+    printf("  |----- SEU CAMPO -----|\n");
+    printf("  |---------------------| ");
+    printf("  |---------------------|\n");
+    for(i = 0; i < 10; i++){
+        memset(cy, 0x0,sizeof(char));
+        switch(i){
+            case 0: strcpy(cy," 1"); break;
+            case 1: strcpy(cy," 2"); break;
+            case 2: strcpy(cy," 3"); break;
+            case 3: strcpy(cy," 4"); break;
+            case 4: strcpy(cy," 5"); break;
+            case 5: strcpy(cy," 6"); break;
+            case 6: strcpy(cy," 7"); break;
+            case 7: strcpy(cy," 8"); break;
+            case 8: strcpy(cy," 9"); break;
+            case 9: strcpy(cy,"10"); break;
+        }        
+        printf("%s| ", cy);
+        ///Campo adversário
+        for (j = 0; j < 10; j++){
+            c_aux = battleField[i][j];
+            if ((c_aux == 'W') || (c_aux != '*'))
+            	c_aux = '~';
+            printf("%c ", c_aux);
+        }
 
-		///Seu campo
-		for(j = 0; j < 10; j++){
-			c_aux = battleField[i][j];
-			if (c_aux == 'W') c_aux = '~';
-			printf("%c ", c_aux);			
-		}
-		///Campo adversário
-		printf("| %s | ", cy);
-		for (j = 10; j < 20; j++){
-			c_aux = battleField[i][j];			
-			printf("%c ", c_aux);
-		}
-		printf("|\n");
-	}	
-	printf("  |---------------------| ");
-	printf("  |---------------------|\n");
-	printf("  | 0|1|2|3|4|5|6|7|8|9 | ");
-	printf("  |----- SEU CAMPO -----|\n\n");
+        printf("| %s| ", cy);
+
+        ///Seu campo
+        for(j = 10; j < 20; j++){
+            c_aux = battleField[i][j];
+            if (c_aux == 'W') c_aux = '~';
+            printf("%c ", c_aux);
+        }        
+        printf("|\n");
+    }    
+    printf("  |---------------------| ");
+    printf("  |---------------------|\n");
+    printf("  | A|B|C|D|E|F|G|H|I|J | ");
+    printf("  |----- SEU CAMPO -----|\n\n");
 }
 
-void validateCoord(){
+//void validateCoord(){
+//	int valid = 0;
+//	while(!valid){
+//
+//		if(!valid){
+//			memset(coord, 0x0, sizeof(coord));
+//			printf("Coordenadas invalidas\n");
+//			applyCoord();
+//		}
+//	}
+//}
+
+//void applyCoord(){	
+//	printf("Informe suas coodenadas: ");
+//	scanf("%c", coord);
+//	validateCoord();
+//}
+
+
+void applyValidateCoord(){	
 	int valid = 0;
 	while(!valid){
+		memset(coord, 0x0, sizeof(coord));
+		printf("Informe suas coodenadas: ");
+	    scanf("%s", coord);
 
-		if(!valid){
-			memset(coord, 0x0, sizeof(coord));
-			printf("Coordenadas invalidas\n");
-			applyCoord();
+		if(!valid){			
+			printf("Coordenadas invalidas\n");			
 		}
 	}
-}
-
-void applyCoord(){
-	printf("Informe suas coodenadas: ");
-	scanf("%c", coord);
-	validateCoord();	
 }
 
 int main(){
@@ -114,7 +131,7 @@ int main(){
         else{
         	printf("Voce joga primeiro\n");
         	printField();
-        	applyCoord();
+        	applyValidateCoord();
         }
 
         

@@ -7,7 +7,7 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 
-#define SERVER_PORT 3333
+#define SERVER_PORT 4242
 #define B_LEN 4096  ////tamanho do buffer para trocar mensagens
 
 ///Estrututra para conexões
@@ -30,9 +30,9 @@ char battleField[10][20] = {
     {'W','W','W','W','W','W','W','W','W','W',  'W','W','W','W','W','W','W','W','W','W'},
     {'W','W','W','W','W','W','W','W','W','W',  'W','W','W','W','W','W','W','W','W','W'},
     {'W','W','W','W','W','W','W','W','W','W',  'W','W','W','W','W','W','W','W','W','W'},
+    {'W','W','W','W','W','W','W','W','W','X',  'W','W','W','W','W','W','W','W','W','*'},
     {'W','W','W','W','W','W','W','W','W','W',  'W','W','W','W','W','W','W','W','W','W'},
-    {'W','W','W','W','W','W','W','W','W','W',  'W','W','W','W','W','W','W','W','W','W'},
-    {'W','W','W','W','W','W','W','W','W','W',  'W','W','W','W','W','W','W','W','W','W'}
+    {'W','W','W','W','W','W','W','W','W','*',  'W','W','W','W','W','W','W','W','X','W'}
 };   
 
 ///-------------------------------------------------------------------------///
@@ -72,7 +72,6 @@ int checkCollision(int i, int j, int align, int shipSize){
                     collision = checkCoordinate((i + c), (j + 1));
                     if (collision) goto shipCollided;
                 }
-                printf("******************\n");
             }            
             break;
         case 1: ///Horizontal
@@ -96,7 +95,6 @@ int checkCollision(int i, int j, int align, int shipSize){
                     collision = checkCoordinate(i, (j + c + 1));
                     if (collision) goto shipCollided;
                 }
-                printf("-----------------\n");
             }
         break;
     }    
@@ -105,7 +103,7 @@ int checkCollision(int i, int j, int align, int shipSize){
 }
 
 
-void applyShip(int shipSize, char shipType){    
+void creatShip(int shipSize, char shipType){    
     if (align == 0){    
         for (int c = 0; c < shipSize; c++){
               battleField[i+c][j] = shipType;
@@ -130,12 +128,12 @@ void shuffleField(){
     align = (rand()%2);
     i = (rand()%7);
     j = (rand()%7);
-    applyShip(4, 'A'); ///Para campo aliado
+    creatShip(4, 'A'); ///Para campo aliado
     
     align = (rand()%2);
     i = ((rand()%7));
     j = ((rand()%7)+10);
-    applyShip(4, 'A'); ///Para campo inimigo
+    creatShip(4, 'A'); ///Para campo inimigo
     printField();
     
 
@@ -148,7 +146,7 @@ void shuffleField(){
             j = (rand()%8);            
             collision = checkCollision(i, j, align, 3);            
         }
-        applyShip(3, 'B');        
+        creatShip(3, 'B');        
 
         collision = 1;
         align = (rand()%2);
@@ -157,7 +155,7 @@ void shuffleField(){
             j = (rand()%8+10);
             collision = checkCollision(i, j, align, 3);
         }
-        applyShip(3, 'B');
+        creatShip(3, 'B');
     }
 
     ///Para Crusador
@@ -169,7 +167,7 @@ void shuffleField(){
             j = (rand()%9);            
             collision = checkCollision(i, j, align, 2);            
         }
-        applyShip(2, 'C');
+        creatShip(2, 'C');
 
         collision = 1;
         align = (rand()%2);
@@ -178,7 +176,7 @@ void shuffleField(){
             j = (rand()%9+10);            
             collision = checkCollision(i, j, align, 2);            
         }
-        applyShip(2, 'C');
+        creatShip(2, 'C');
     }
 
 
@@ -191,7 +189,7 @@ void shuffleField(){
             j = (rand()%10);            
             collision = checkCollision(i, j, align, 1);            
         }
-        applyShip(1, 'S');
+        creatShip(1, 'S');
 
         collision = 1;
         while(collision){            
@@ -199,7 +197,7 @@ void shuffleField(){
             j = (rand()%10+10);            
             collision = checkCollision(i, j, align, 1);
         }
-        applyShip(1, 'S');
+        creatShip(1, 'S');
     }
 
     printField();
@@ -219,46 +217,48 @@ void msgToClient(char buffer[B_LEN]){
 }
 
 void printField(){
-    char cy[1], c_aux;
+    char cy[2], c_aux;
     int i, j;
-    printf("  | 0|1|2|3|4|5|6|7|8|9 | ");
+    printf("  | A|B|C|D|E|F|G|H|I|J | ");
     printf("  |----- SEU CAMPO -----|\n");
     printf("  |---------------------| ");
     printf("  |---------------------|\n");
     for(i = 0; i < 10; i++){
         memset(cy, 0x0,sizeof(char));
         switch(i){
-            case 0: strcpy(cy,"0"); break;
-            case 1: strcpy(cy,"1"); break;
-            case 2: strcpy(cy,"2"); break;
-            case 3: strcpy(cy,"3"); break;
-            case 4: strcpy(cy,"4"); break;
-            case 5: strcpy(cy,"5"); break;
-            case 6: strcpy(cy,"6"); break;
-            case 7: strcpy(cy,"7"); break;
-            case 8: strcpy(cy,"8"); break;
-            case 9: strcpy(cy,"9"); break;
+            case 0: strcpy(cy," 1"); break;
+            case 1: strcpy(cy," 2"); break;
+            case 2: strcpy(cy," 3"); break;
+            case 3: strcpy(cy," 4"); break;
+            case 4: strcpy(cy," 5"); break;
+            case 5: strcpy(cy," 6"); break;
+            case 6: strcpy(cy," 7"); break;
+            case 7: strcpy(cy," 8"); break;
+            case 8: strcpy(cy," 9"); break;
+            case 9: strcpy(cy,"10"); break;
         }        
-        printf("%s | ", cy);
+        printf("%s| ", cy);
+        ///Campo adversário        
+        for (j = 10; j < 20; j++){
+            c_aux = battleField[i][j];
+            if ((c_aux == 'W') || (c_aux != '*'))
+            	c_aux = '~';
+            printf("%c ", c_aux);
+        }
+
+        printf("| %s| ", cy);
 
         ///Seu campo
         for(j = 0; j < 10; j++){
             c_aux = battleField[i][j];
             if (c_aux == 'W') c_aux = '~';
             printf("%c ", c_aux);
-        }
-        ///Campo adversário
-        printf("| %s | ", cy);
-        for (j = 10; j < 20; j++){
-            c_aux = battleField[i][j];
-            if (c_aux == 'W') c_aux = '~';
-            printf("%c ", c_aux);
-        }
+        }        
         printf("|\n");
     }    
     printf("  |---------------------| ");
     printf("  |---------------------|\n");
-    printf("  | 0|1|2|3|4|5|6|7|8|9 | ");
+    printf("  | A|B|C|D|E|F|G|H|I|J | ");
     printf("  |----- SEU CAMPO -----|\n\n");
 }
 
