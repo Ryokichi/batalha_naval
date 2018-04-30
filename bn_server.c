@@ -8,21 +8,23 @@
 #include <sys/socket.h>
 #include <ctype.h>
 
-#define SERVER_PORT 4242
-#define B_LEN 4096  ////tamanho do buffer para trocar mensagens
+#define LOCAL_PORT  4242
+#define REMOTE_PORT 4343
+#define REMOTE_IP   "10.0.0.3"
+#define B_LEN       4096  ////tamanho do buffer para trocar mensagens
 
-///Estrututra para conexões
+///------Estrututra para conexões-----///
 struct sockaddr_in localAddr, remoteAddr;
-socklen_t sizeRemoteAddr;
+int sizeLocalAddr, sizeRemoteAddr;
 
-///Variáveis Globais
-int local_sckt, remote_sckt, bind_sckt;
-int i_recv, i_send, play_first = 0;
-int i, j, align, collision, victory = 0;
+///-----Variáveis Globais----///
+int  local_sckt, remote_sckt, bind_sckt;
+int  i_recv, i_send, play_first = 0;
+int  i, j, align, collision, victory = 0;
 char coord[2];
-char buffer[B_LEN];
+char buffer[B_LEN], cp_battleField[10][24];
 
-////O servidor controlará as jogadas e cuidará de replicar para o cliente o status atual
+///-----O servidor controlará as jogadas e cuidará de replicar para o cliente o status atual-----///
 char battleField[10][24] = {
     {'W','W','W','W','W','W','W','W','W','W',  'W','W','W','W','W','W','W','W','W','W', '-','-', '-','-'},
     {'W','W','W','W','W','W','W','W','W','W',  'W','W','W','W','W','W','W','W','W','W', '-','-', '-','-'},
@@ -37,12 +39,125 @@ char battleField[10][24] = {
 };   
 
 ///-------------------------------------------------------------------------///
+///Funcoes
 ///-------------------------------------------------------------------------///
-int checkCoordinate(int i, int j){    
-    return ((battleField[i][j]) != 'W');    
+int  checkCoordinate(int i, int j);
+int  checkCollision(int i, int j, int align, int shipSize);
+int  checkVictory(int player);
+int  upperCase(char str[]);
+int  tossCoin();
+void creatShip(int shipSize, char shipType);
+void generateField();
+void printField();
+void getCoordinates();
+void validateShot(int player);
+///-------------------------------------------------------------------------///
+///-------------------------------------------------------------------------///
+
+int main(){
+    system("clear");
+    srand(time(NULL));
+    printf("Integrantes: \nCAROLINE GONCALVES DE FELIPE \nHEITOR RYOKICHI NAKAMURA \nRENAN ALVES NOWAK \nWILSON RICARDO DA SILVA FABOZI\n\n\n");
+
+    local_sckt = socket(AF_INET, SOCK_DGRAM, 0);
+    if (local_sckt < 0){
+        printf("Falha. Nao possivel criar socket\n");
+        return 1;
+    }
+    else
+        printf("Sucesso. Socket criado\n");
+
+    localAddr.sin_family     = AF_INET;
+    localAddr.sin_port       = htons(LOCAL_PORT);
+    memset(localAddr.sin_zero, 0x0, 8);
+
+    remoteAddr.sin_family      = AF_INET;
+    remoteAddr.sin_port        = htons(REMOTE_PORT);
+    remoteAddr.sin_addr.s_addr = inet_addr(REMOTE_IP);
+    memset(remoteAddr.sin_zero, 0x0, 8);
+
+    sizeLocalAddr  = sizeof(localAddr);
+    sizeRemoteAddr = sizeof(remoteAddr);    
+
+    bind_sckt = bind(local_sckt, (struct sockaddr*)&localAddr, sizeLocalAddr);
+    if (bind_sckt < 0){
+        printf("Falha. Erro ao vincular porta com socket\n");
+        return 1;
+    }
+    else
+        printf("Sucesso. Vinculo de porta com socket efetuado \nAguardando conexao do cliente\n");
+
+    recvfrom(local_sckt, buffer, B_LEN, 0, (struct sockaddr*)&remoteAddr, &sizeRemoteAddr);
+    printf("MSG_cliente: %s \n", buffer);
+    memset(buffer, 0x0, B_LEN);
+
+    ////----Cria e embaralha o campo de batalha----///
+    generateField();
+    printField();
+
+    play_first = tossCoin();    
+    sprintf(buffer, "%d", play_first);
+    sendto(local_sckt, buffer, B_LEN, 0, (struct sockaddr*)&remoteAddr, sizeRemoteAddr);
+
+    if (play_first == 1){
+        sendto(local_sckt, battleField, sizeof(battleField), 0, (struct sockaddr*)&remoteAddr, sizeRemoteAddr);
+        printf("Voce sera o segundo a jogar\n\n");
+        printf("Aguardando oponente...\n");
+        ///É assumido que as coordenadas são validas, já que é analisado em ambos lados
+        recvfrom(local_sckt, coord, sizeof(coord), 0, (struct sockaddr*)&remoteAddr, &sizeRemoteAddr);
+        validateShot(2);  ///player 2
+        printf("Coordenadas informadas: %s\n", coord);
+        sendto(local_sckt, battleField, sizeof(battleField), 0, (struct sockaddr*)&remoteAddr, sizeRemoteAddr);
+        printField();
+    }
+    else {
+        printf("Voce joga primeiro\n\n");
+    }
+
+    while(!victory){
+        getCoordinates();
+        validateShot(1);
+        sendto(local_sckt, battleField, sizeof(battleField), 0, (struct sockaddr*)&remoteAddr, sizeRemoteAddr);
+        
+        victory = checkVictory(1);
+        memset(buffer, 0x0, B_LEN);
+        sprintf(buffer, "%d", victory);
+        sendto(local_sckt, buffer, B_LEN, 0, (struct sockaddr*)&remoteAddr, sizeRemoteAddr);
+
+        if (!victory){
+            printf("Aguardando oponente...\n");
+            recvfrom(local_sckt, coord, sizeof(coord), 0, (struct sockaddr*)&remoteAddr, &sizeRemoteAddr);
+            validateShot(2);  ///player 2
+            printf("Coordenadas informadas: %s\n", coord);
+            sendto(local_sckt, battleField, sizeof(battleField), 0, (struct sockaddr*)&remoteAddr, sizeRemoteAddr);
+            printField();
+
+            victory = checkVictory(1);
+            memset(buffer, 0x0, B_LEN);
+            sprintf(buffer, "%d", victory);
+            sendto(local_sckt, buffer, B_LEN, 0, (struct sockaddr*)&remoteAddr, sizeRemoteAddr);
+        }
+    }
+
+    if (victory == 1) printf("Voce venceu!!! :)\n");
+    if (victory == 2) printf("Seu adversario venceu!!! :)");
+
+    printf("---- FIM DE JOGO ----");
 }
 
-int checkCollision(int i, int j, int align, int shipSize){    
+int tossCoin(){
+    int coin;    
+    coin = (((rand()%7)%3)%2);
+    printf("Valor sorteado = %d\n", coin);
+    return 1;
+    //return coin;
+}
+
+int checkCoordinate(int i, int j){
+    return ((battleField[i][j]) != 'W');
+}
+
+int checkCollision(int i, int j, int align, int shipSize){
     int collision = 0;
     int side_ctrl = 0;
 
@@ -116,7 +231,7 @@ void creatShip(int shipSize, char shipType){
 }
 
 
-void shuffleField(){
+void generateField(){
     ///A = Aircraft Carrier
     ///B = Battleship
     ///C = Cruiser
@@ -199,16 +314,6 @@ void shuffleField(){
     }
 }
 
-int tossCoin(){
-    int coin;    
-    coin = (((rand()%7)%3)%2);
-    printf("Valor sorteado = %d\n", coin);
-    return coin;
-}
-
-void msgToClient(char buffer[B_LEN]){
-    //send(remote_sckt, buffer, strlen(buffer), 0);    
-}
 
 void printField(){
     system("clear");
@@ -266,11 +371,8 @@ int upperCase(char str[]){
         str[i] = toupper(str[i]);
     }
 }
-void changeField(){
 
-}
-
-void applyValidateCoord(){    
+void getCoordinates(){    
     int valid = 0;
     while(!valid){
         memset(coord, 0x0, sizeof(coord));
@@ -309,8 +411,7 @@ void applyValidateCoord(){
         }
         if(!valid)
             printf("Coordenadas invalidas\n");
-    }
-    changeField();
+    }    
 }
 
 void validateShot(int player){
@@ -358,8 +459,7 @@ void validateShot(int player){
         battleField[cy][cx] = '*';
 }
 
-int checkVictory(int player){
-    printf("Player = %d \n", player);
+int checkVictory(int player){    
     int cont = 0;
     int i, j, j_aux;
     
@@ -373,98 +473,9 @@ int checkVictory(int player){
             if (battleField[i][j] == 'X') cont ++;
         }
     }
-    printf("Cont = %d \n", cont );
+
     if (cont == 20)
         return player;
     else 
         return 0;
-}
-
-int main(){
-    //system("clear");
-    srand(time(NULL));
-    shuffleField();
-
-    ///Inicia o socket local
-    local_sckt = socket(AF_INET, SOCK_STREAM, 0);
-    if (local_sckt < 0)
-        printf("Falha. Nao possivel criar socket\n");
-    else
-        printf("Sucesso. Socket criado\n");
-
-    ///Configura a porta e vincula com o socket
-    localAddr.sin_family     = AF_INET;
-    localAddr.sin_port       = htons(SERVER_PORT);
-    memset(localAddr.sin_zero, 0x0, 8);
-    bind_sckt = bind(local_sckt, (struct sockaddr*)&localAddr, sizeof(localAddr));
-    if (bind_sckt < 0)
-        printf("Falha. Erro ao vincular porta com socket\n");
-    else
-        printf("Sucesso. Vinculo de porta com socket efetuado \nAguardando conexao do cliente\n");
-
-    ///Aguarda a requisição de uma conexão pelo cliente e então estabelece
-    listen(local_sckt, 1);
-    remote_sckt = accept(local_sckt, (struct sockaddr*)&remoteAddr, &sizeRemoteAddr);
-    if (remote_sckt < 0)
-        printf("Falha ao conectar com cliente\n");
-    else{
-        printField();
-        printf("Conexao estabelecida com cliente\n");
-
-        memset(buffer, 0x0, B_LEN);
-        strcpy(buffer, "Bem Vindo. Sua conexao foi aceita.\0");
-        send(remote_sckt, buffer, sizeof(buffer),0);
-
-        
-        send(remote_sckt, battleField, sizeof(battleField), 0);        
-
-        play_first = tossCoin();
-        sprintf(buffer, "%d", play_first);
-        send(remote_sckt, buffer, sizeof(buffer), 0);
-
-
-        if (play_first == 1){
-            printf("Voce sera o segundo a jogar\n\n");
-            printf("Aguardando oponente...\n");
-            recv(remote_sckt, coord, sizeof(coord), 0); ///É assumido que as coordenadas são validas
-            validateShot(2);  ///player 2
-            printf("Coordenadas informadas: %s\n", coord);
-            send(remote_sckt, battleField, sizeof(battleField), 0);
-
-        }else{
-            printf("Voce joga primeiro\n\n");
-        }
-
-        while(!victory){
-            applyValidateCoord();
-            validateShot(1);  ///player 1
-            victory = checkVictory(1);
-            send(remote_sckt, battleField, sizeof(battleField), 0);
-
-            memset(buffer, 0x0,B_LEN);
-            sprintf(buffer, "%d", victory);
-            send(remote_sckt, buffer, sizeof(buffer), 0);
-            printField();
-
-            printf("Aguardando oponente...\n");
-
-            if(!victory){
-                recv(remote_sckt, coord, sizeof(coord),0);
-                validateShot(2);  ///player 2
-                victory = checkVictory(2);
-                send(remote_sckt, battleField, sizeof(battleField), 0);
-
-                memset(buffer, 0x0,B_LEN);
-                sprintf(buffer, "%d", victory);
-                send(remote_sckt, buffer, sizeof(buffer), 0);
-                printField();
-            }
-        }        
-    }
-    if(victory == 1)
-        printf("Voce venceu!!! :)\n");
-    else
-        printf("Seu adversario venceu!!! \n");
-
-    printf("Conexao encerrada com cliente\n");
 }

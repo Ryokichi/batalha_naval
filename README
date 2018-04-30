@@ -1,8 +1,17 @@
-Jogo desenvolvido para trabalho de curso tecnologia de redes
-
-Trata-se de um jogo multplayer para ser jogado através da rede
-por linha de comando.
+Jogo Batalha Naval - Via linha de comando
 
 
-Optei por fazer com que o servidor faça praticamente todo o trabalho,
-informando para o cliente apenas o status do campo.
+Fatec São Caetano do Sul - Jogo desenvolvido para trabalho de curso em Tecnologia de Redes
+
+
+Professor  : FÁBIO HENRIQUE CABRINI
+
+Integrantes: CAROLINE GONCALVES DE FELIPE 
+             HEITOR RYOKICHI NAKAMURA 
+             RENAN ALVES NOWAK 
+             WILSON RICARDO DA SILVA FABOZI
+
+
+Trata-se de um jogo como batalha naval, multiplayer, no caso dois, para ambiente Linux.
+Jogo desenvolvido utilizando tecnologia UDP para comunicação entre cliente e servidor.
+Não se utiliza de componentes gráficos e é jogado através do terminal por linhas de comando.
